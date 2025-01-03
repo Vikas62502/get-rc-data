@@ -1,21 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Alert, 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  FlatList, 
-  StyleSheet, 
-  ActivityIndicator, 
-  BackHandler 
+import {
+  Alert,
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  FlatList,
+  StyleSheet,
+  ActivityIndicator,
+  BackHandler
 } from 'react-native';
 import DashboardCard from './DashboardCard';
-import axios from 'axios';
 import { client } from './client/axios';
 import * as FileSystem from 'expo-file-system';
-import * as Sharing from 'expo-sharing';
+import * as MediaLibrary from 'expo-media-library';
 import Header from './Header';
+import { Buffer } from 'buffer';
+
 
 type DashboardProps = {
   navigation: any;
@@ -40,27 +41,44 @@ const Dashboard: React.FC<DashboardProps> = ({ navigation }) => {
     }
   };
 
-  const handleDownloadRC = async () => {
+  const handleDownloadRC = async (vehicleNumber: string) => {
     setLoading(true);
     try {
-      const response = await client.post('api/dashboard/get-single-rc', { rcId: vehicleNumber }, { responseType: 'arraybuffer' });
+      // Request media library permissions
+      const { status } = await MediaLibrary.requestPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission denied', 'You need to enable permissions to save files.');
+        return;
+      }
 
-      // Convert response data to Base64
-      const base64Data = `data:image/png;base64,${Buffer.from(response.data).toString('base64')}`;
+      // Make the API request
+      const response: any = await client.post(
+        'api/dashboard/get-single-rc', // Replace with your API URL
+        { rcId: vehicleNumber },
+        { responseType: 'arraybuffer' } // Retrieve data as binary
+      );
 
-      // Save file locally
-      const fileUri = `${FileSystem.documentDirectory}${vehicleNumber}_RC.png`;
-      await FileSystem.writeAsStringAsync(fileUri, base64Data.split(',')[1], { encoding: FileSystem.EncodingType.Base64 });
+      if (response.status === 200) {
+        const base64Image = `data:image/png;base64,${Buffer.from(response.data, 'binary').toString('base64')}`;
 
-      // Share or show file location
-      if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(fileUri);
+        const fileUri = `${FileSystem.documentDirectory}${vehicleNumber}_RC.png`;
+
+        // Write the Base64 image to local filesystem
+        await FileSystem.writeAsStringAsync(fileUri, base64Image.replace(/^data:image\/png;base64,/, ''), {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+
+        // Save to media library
+        const asset = await MediaLibrary.createAssetAsync(fileUri);
+        await MediaLibrary.createAlbumAsync('RC Downloads', asset, false);
+
+        Alert.alert('Success', 'Image saved to your device!');
       } else {
-        Alert.alert('Success', `RC downloaded successfully! File saved to: ${fileUri}`);
+        Alert.alert('Error', 'Failed to download RC image.');
       }
     } catch (error) {
-      console.error('Error downloading RC:', JSON.stringify(error));
-      Alert.alert('Error', 'Failed to download RC. Please try again.');
+      console.error('Error downloading RC:', error);
+      Alert.alert('Error', 'An unexpected error occurred.');
     } finally {
       setLoading(false);
     }
@@ -128,7 +146,7 @@ const Dashboard: React.FC<DashboardProps> = ({ navigation }) => {
             value={vehicleNumber}
             onChangeText={(text) => setVehicleNumber(text.toUpperCase())}
           />
-          <TouchableOpacity style={styles.button} onPress={handleDownloadRC}>
+          <TouchableOpacity style={styles.button} onPress={() => handleDownloadRC(vehicleNumber)}>
             <Text style={styles.buttonText}>Get RC</Text>
           </TouchableOpacity>
         </View>
@@ -138,6 +156,7 @@ const Dashboard: React.FC<DashboardProps> = ({ navigation }) => {
             data={transactions}
             renderItem={renderTransaction}
             keyExtractor={(item) => item.id}
+            key={transactions.length}
           />
         </View>
       </View>
@@ -161,7 +180,7 @@ const styles = StyleSheet.create({
   headerText: {
     fontSize: 16,
     color: '#000',
-    fontWeight: 600,
+    fontWeight: '600',
   },
   inputContainer: {
     flexDirection: 'row',
@@ -180,16 +199,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   button: {
-    backgroundColor: '#007BFF', // Blue background color
+    backgroundColor: '#007BFF',
     paddingVertical: 12,
     paddingHorizontal: 25,
     borderRadius: 10,
     alignItems: 'center',
   },
   buttonText: {
-    color: '#FFFFFF', // White text color
+    color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '600', // Semi-bold font weight
+    fontWeight: '600',
   },
   transactionsContainer: {
     backgroundColor: '#FFFFFF',

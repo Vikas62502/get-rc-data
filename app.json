@@ -16,7 +16,7 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.mohit_30.getrcdata"
+      "package": "com.vikas62502.getrcdata"
     },
     "web": {
       "bundler": "metro",
@@ -43,8 +43,9 @@
         "origin": false
       },
       "eas": {
-        "projectId": "e167343c-f685-4a58-9caa-799b843a94af"
+        "projectId": "8309bff6-f2ca-463c-b6c0-ffa4d6351382"
       }
-    }
+    },
+    "owner": "vikas62502"
   }
 }

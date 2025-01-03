@@ -2,14 +2,7 @@
 import axios from 'axios'
 import { setupInterceptorsTo } from './interceptor'
 
-// const customBaseUrl = 'http://192.168.0.65:3001/v1/api'
-// const customBaseUrl = 'https://api.chairbord.in/v1/api'
-
-// const customBaseUrl = 'https://cbpl.chairbord.in/v1/api'
-// const customBaseUrl = 'http://192.168.31.51:3001/v1/api'
-
-// const customBaseUrl = 'http://3.108.28.239/';
-const customBaseUrl = 'http://192.168.29.124:8080/';
+const customBaseUrl = 'http://3.108.28.239:8080';
 
 
 export const client = axios.create({

@@ -24,7 +24,7 @@ const Dashboard: React.FC = () => {
   const [vehicleNumber, setVehicleNumber] = useState('');
   const [userData, setUserData] = useState<any>(null);
   const [transactions, setTransactions] = useState<any[]>([]);
-  const [successModalVisible, setSuccessModalVisible] = useState(false); // State for modal visibility
+  const [successModalVisible, setSuccessModalVisible] = useState(false);
 
   const fetchDashboardData = async () => {
     setLoading(true);
@@ -50,21 +50,21 @@ const Dashboard: React.FC = () => {
           return;
         }
       }
-  
+
       const response: any = await client.post(
         'api/dashboard/get-single-rc',
         { rcId: vehicleNumber },
         { responseType: 'arraybuffer' }
       );
-  
+
       if (response.status === 200) {
         const base64Image = `data:image/png;base64,${Buffer.from(response.data, 'binary').toString('base64')}`;
         const fileUri = `${FileSystem.documentDirectory}${vehicleNumber}_RC.png`;
-  
+
         await FileSystem.writeAsStringAsync(fileUri, base64Image.replace(/^data:image\/png;base64,/, ''), {
           encoding: FileSystem.EncodingType.Base64,
         });
-  
+
         setVehicleNumber('');  // Clear input only on success
         setSuccessModalVisible(true);  // Show success modal
       } else {
@@ -77,7 +77,7 @@ const Dashboard: React.FC = () => {
       setLoading(false);
     }
   };
-  
+
 
   useEffect(() => {
     fetchDashboardData();
@@ -165,12 +165,12 @@ const Dashboard: React.FC = () => {
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <View style={{ alignItems: 'center',marginTop: 50 }}>
-            <Image
-              source={require('../assets/success.png')} // Path to your tick image
-              style={styles.successImage}
-            />
-            <Text style={styles.successText}>RC Downloaded Successfully!</Text>
+            <View style={{ alignItems: 'center', marginTop: 50 }}>
+              <Image
+                source={require('../assets/success.png')} // Path to your tick image
+                style={styles.successImage}
+              />
+              <Text style={styles.successText}>RC Downloaded Successfully!</Text>
             </View>
             <TouchableOpacity
               style={styles.okButton}
@@ -249,7 +249,7 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     width: '70%',
-    height:'35%',
+    height: '35%',
     backgroundColor: '#fff',
     padding: 20,
     borderRadius: 10,
@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 40,
     borderRadius: 5,
-    marginTop: 50,
+    marginTop: "10%",
   },
   okButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
 

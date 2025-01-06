@@ -176,26 +176,26 @@ const Login = ({ navigation, onSwitch }: any) => {
         </View>
 
         <View style={styles.inputContainer}>
-  <Image source={require('../assets/padlock.png')} style={styles.inputIcon} />
-  <TextInput
-    style={[styles.input, { paddingRight: 40 }]} // Extra padding to avoid overlap with eye icon
-    placeholder="Enter Password"
-    placeholderTextColor="#888"
-    secureTextEntry={!showPassword}
-    value={password}
-    onChangeText={setPassword}
-  />
-  <TouchableOpacity style={styles.eyeButton} onPress={() => setShowPassword(!showPassword)}>
-    <Image
-      source={
-        showPassword
-          ? require('../assets/eye.png') // Path to your "eye open" icon
-          : require('../assets/eye-off.png') // Path to your "eye closed" icon
-      }
-      style={styles.eyeIcon}
-    />
-  </TouchableOpacity>
-</View>
+          <Image source={require('../assets/padlock.png')} style={styles.inputIcon} />
+          <TextInput
+            style={[styles.input, { paddingRight: 40 }]} // Extra padding to avoid overlap with eye icon
+            placeholder="Enter Password"
+            placeholderTextColor="#888"
+            secureTextEntry={!showPassword}
+            value={password}
+            onChangeText={setPassword}
+          />
+          <TouchableOpacity style={styles.eyeButton} onPress={() => setShowPassword(!showPassword)}>
+            <Image
+              source={
+                showPassword
+                  ? require('../assets/eye.png') // Path to your "eye open" icon
+                  : require('../assets/eye-off.png') // Path to your "eye closed" icon
+              }
+              style={styles.eyeIcon}
+            />
+          </TouchableOpacity>
+        </View>
 
 
         <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
@@ -286,7 +286,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  
+
 });
 
 export default Login;

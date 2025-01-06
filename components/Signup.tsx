@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image } from 'react-native';
-import axios from 'axios';
 import { client } from './client/axios'; // Reuse axios client
 
 const Signup = ({ onSwitch, navigation }: any) => {
@@ -26,7 +25,7 @@ const Signup = ({ onSwitch, navigation }: any) => {
 
     try {
       setLoading(true);
-      const response = await client.post('/api/login/user-signup', {
+      await client.post('/api/login/user-signup', {
         fullname: name,
         mobile,
         email,

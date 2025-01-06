@@ -74,21 +74,17 @@ import { useNavigation } from '@react-navigation/native';
 import { clearAllCache, getCache } from './client/storage';
 
 
-const Header = ({ currentScreen }:any) => {
+const Header = ({ currentScreen }: any) => {
   const navigation = useNavigation();
-  // const [isAuthenticated, setIsAuthenticated] = useState(true);
- const navigateToDashboard = async() => {
-   // Navigate to Dashboard screen
-   const token = await getCache('token');
-   if (token) {
-   navigation.navigate('Dashboard');
-   }
- }
- useEffect(() => {
-   navigateToDashboard();
- }, []);
-
-
+  const navigateToDashboard = async () => {
+    const token = await getCache('token');
+    if (token) {
+      navigation.navigate('Dashboard');
+    }
+  }
+  useEffect(() => {
+    navigateToDashboard();
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -106,7 +102,7 @@ const Header = ({ currentScreen }:any) => {
             onPress: async () => {
 
               try {
-  await clearAllCache();
+                await clearAllCache();
 
                 const response = await client.post('api/login/user-logout', {
                   method: 'POST',
@@ -117,7 +113,7 @@ const Header = ({ currentScreen }:any) => {
                 });
                 Alert.alert('Logout Successful', 'You have been logged out.');
                 console.log(response, 'response');
-  
+
                 // Navigate to the login screen
                 navigation.navigate('Auth');
               } catch (error) {
@@ -134,7 +130,7 @@ const Header = ({ currentScreen }:any) => {
       Alert.alert('Logout Error', 'An error occurred while preparing to log out.');
     }
   };
-  
+
 
   return (
     <View style={styles.header}>

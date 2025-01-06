@@ -10,9 +10,10 @@ const Signup = ({ onSwitch, navigation }: any) => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleSignup = async () => {
-    // Validation
     if (!name || !mobile || !email || !password || !confirmPassword) {
       Alert.alert('Error', 'All fields are required.');
       return;
@@ -25,8 +26,6 @@ const Signup = ({ onSwitch, navigation }: any) => {
 
     try {
       setLoading(true);
-
-      // API Call
       const response = await client.post('/api/login/user-signup', {
         fullname: name,
         mobile,
@@ -35,8 +34,6 @@ const Signup = ({ onSwitch, navigation }: any) => {
         role: 'User',
       });
       Alert.alert('Success', 'Account created successfully. Please log in.');
-
-      
     } catch (error) {
       console.error('Signup Error:', error);
       Alert.alert('Error', 'Unable to sign up. Please try again later.');
@@ -47,97 +44,111 @@ const Signup = ({ onSwitch, navigation }: any) => {
 
   return (
     <View style={styles.container}>
-    <View style={styles.card}>
-      <Text style={styles.title}>Sign Up</Text>
+      <View style={styles.card}>
+        <Text style={styles.title}>Sign Up</Text>
 
-      {/* Name Input */}
-      <View style={styles.inputContainer}>
-        <Image source={require('../assets/user.png')} style={styles.inputIcon} />
-        <TextInput
-          style={styles.input}
-          placeholder="Enter Name"
-          placeholderTextColor="#888"
-          value={name}
-          onChangeText={setName}
-        />
-      </View>
+        <View style={styles.inputContainer}>
+          <Image source={require('../assets/user.png')} style={styles.inputIcon} />
+          <TextInput
+            style={styles.input}
+            placeholder="Enter Name"
+            placeholderTextColor="#888"
+            value={name}
+            onChangeText={setName}
+          />
+        </View>
 
-      {/* Mobile Number Input */}
-      <View style={styles.inputContainer}>
-        <Image source={require('../assets/phone.png')} style={styles.inputIcon} />
-        <TextInput
-          style={styles.input}
-          placeholder="+91 Enter Mobile Number"
-          placeholderTextColor="#888"
-          keyboardType="phone-pad"
-          value={mobile}
-          onChangeText={setMobile}
-        />
-      </View>
+        <View style={styles.inputContainer}>
+          <Image source={require('../assets/phone.png')} style={styles.inputIcon} />
+          <TextInput
+            style={styles.input}
+            placeholder="+91 Enter Mobile Number"
+            placeholderTextColor="#888"
+            keyboardType="phone-pad"
+            value={mobile}
+            onChangeText={setMobile}
+          />
+        </View>
 
-      {/* Email Input */}
-      <View style={styles.inputContainer}>
-        <Image source={require('../assets/email.png')} style={styles.inputIcon} />
-        <TextInput
-          style={styles.input}
-          placeholder="Enter Email ID"
-          placeholderTextColor="#888"
-          keyboardType="email-address"
-          value={email}
-          onChangeText={setEmail}
-        />
-      </View>
+        <View style={styles.inputContainer}>
+          <Image source={require('../assets/email.png')} style={styles.inputIcon} />
+          <TextInput
+            style={styles.input}
+            placeholder="Enter Email ID"
+            placeholderTextColor="#888"
+            keyboardType="email-address"
+            value={email}
+            onChangeText={setEmail}
+          />
+        </View>
 
-      {/* Password Input */}
-      <View style={styles.inputContainer}>
-        <Image source={require('../assets/padlock.png')} style={styles.inputIcon} />
-        <TextInput
-          style={styles.input}
-          placeholder="Enter Password"
-          placeholderTextColor="#888"
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-        />
-      </View>
+        <View style={styles.inputContainer}>
+          <Image source={require('../assets/padlock.png')} style={styles.inputIcon} />
+          <TextInput
+            style={[styles.input, { paddingRight: 40 }]}
+            placeholder="Enter Password"
+            placeholderTextColor="#888"
+            secureTextEntry={!showPassword}
+            value={password}
+            onChangeText={setPassword}
+          />
+          <TouchableOpacity style={styles.eyeButton} onPress={() => setShowPassword(!showPassword)}>
+            <Image
+              source={
+                showPassword
+                  ? require('../assets/eye.png') // Use your eye-open icon
+                  : require('../assets/eye-off.png') // Use your eye-closed icon
+              }
+              style={styles.eyeIcon}
+            />
+          </TouchableOpacity>
+        </View>
 
-      {/* Confirm Password Input */}
-      <View style={styles.inputContainer}>
-        <Image source={require('../assets/padlock.png')} style={styles.inputIcon} />
-        <TextInput
-          style={styles.input}
-          placeholder="Confirm Password"
-          placeholderTextColor="#888"
-          secureTextEntry
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-        />
-      </View>
+        <View style={styles.inputContainer}>
+          <Image source={require('../assets/padlock.png')} style={styles.inputIcon} />
+          <TextInput
+            style={[styles.input, { paddingRight: 40 }]}
+            placeholder="Confirm Password"
+            placeholderTextColor="#888"
+            secureTextEntry={!showConfirmPassword}
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+          />
+          <TouchableOpacity
+            style={styles.eyeButton}
+            onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+          >
+            <Image
+              source={
+                showConfirmPassword
+                  ? require('../assets/eye.png')
+                  : require('../assets/eye-off.png')
+              }
+              style={styles.eyeIcon}
+            />
+          </TouchableOpacity>
+        </View>
 
-      {/* Signup Button */}
-      <TouchableOpacity style={styles.button} onPress={handleSignup} disabled={loading}>
-        <Text style={styles.buttonText}>{loading ? 'Signing up...' : 'Sign Up'}</Text>
-      </TouchableOpacity>
+        <TouchableOpacity style={styles.button} onPress={handleSignup} disabled={loading}>
+          <Text style={styles.buttonText}>{loading ? 'Signing up...' : 'Sign Up'}</Text>
+        </TouchableOpacity>
 
-      {/* Toggle to Login */}
-      <Text style={styles.toggleText}>
-        Already a member?{' '}
-        <Text style={styles.toggleLink} onPress={onSwitch}>
-          Log In Now
+        <Text style={styles.toggleText}>
+          Already a member?{' '}
+          <Text style={styles.toggleLink} onPress={onSwitch}>
+            Log In Now
+          </Text>
         </Text>
-      </Text>
-    </View>
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-
   container: {
     flex: 1,
-    // backgroundColor: 'red',
     alignItems: 'center',
-   height: '100%',
+    height: '100%',
     justifyContent: 'center',
   },
   card: {
@@ -163,7 +174,7 @@ const styles = StyleSheet.create({
   inputIcon: {
     width: 30,
     height: 30,
-    marginRight: 10, // Space between icon and input field
+    marginRight: 10,
   },
   input: {
     flex: 1,
@@ -173,6 +184,18 @@ const styles = StyleSheet.create({
     borderColor: '#CCC',
     borderRadius: 5,
     fontSize: 14,
+  },
+  eyeButton: {
+    position: 'absolute',
+    right: 20,
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  eyeIcon: {
+    width: 20,
+    height: 20,
+    opacity: 0.6,
   },
   button: {
     width: '100%',

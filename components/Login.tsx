@@ -126,10 +126,12 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image } fro
 import axios from 'axios';
 import { client } from './client/axios';
 import { getCache, setCache } from './client/storage';
+
 const Login = ({ navigation, onSwitch }: any) => {
   const [identifier, setIdentifier] = useState(''); // Can be email or mobile
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false); // Toggle state for password visibility
 
   const handleLogin = async () => {
     if (!identifier || !password) {
@@ -139,14 +141,11 @@ const Login = ({ navigation, onSwitch }: any) => {
 
     try {
       setLoading(true);
-
-      // API call
       const response = await client.post('/api/login/user-login', {
-        emailOrPhone: identifier, // Can be email or mobile
+        emailOrPhone: identifier,
         password,
       });
       console.log(response.data, 'response');
-      // const { success, token, message } = response.data;
       navigation.navigate('Dashboard', { token: response?.data?.token });
       await setCache('token', response?.data?.token);
       await setCache('userData', response?.data?.user);
@@ -164,7 +163,6 @@ const Login = ({ navigation, onSwitch }: any) => {
       <View style={styles.card}>
         <Text style={styles.title}>Login</Text>
 
-        {/* Identifier Input (Email or Mobile) */}
         <View style={styles.inputContainer}>
           <Image source={require('../assets/user.png')} style={styles.inputIcon} />
           <TextInput
@@ -177,25 +175,33 @@ const Login = ({ navigation, onSwitch }: any) => {
           />
         </View>
 
-        {/* Password Input */}
         <View style={styles.inputContainer}>
-          <Image source={require('../assets/padlock.png')} style={styles.inputIcon} />
-          <TextInput
-            style={styles.input}
-            placeholder="Enter Password"
-            placeholderTextColor="#888"
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-          />
-        </View>
+  <Image source={require('../assets/padlock.png')} style={styles.inputIcon} />
+  <TextInput
+    style={[styles.input, { paddingRight: 40 }]} // Extra padding to avoid overlap with eye icon
+    placeholder="Enter Password"
+    placeholderTextColor="#888"
+    secureTextEntry={!showPassword}
+    value={password}
+    onChangeText={setPassword}
+  />
+  <TouchableOpacity style={styles.eyeButton} onPress={() => setShowPassword(!showPassword)}>
+    <Image
+      source={
+        showPassword
+          ? require('../assets/eye.png') // Path to your "eye open" icon
+          : require('../assets/eye-off.png') // Path to your "eye closed" icon
+      }
+      style={styles.eyeIcon}
+    />
+  </TouchableOpacity>
+</View>
 
-        {/* Login Button */}
+
         <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
           <Text style={styles.buttonText}>{loading ? 'Logging in...' : 'Login'}</Text>
         </TouchableOpacity>
 
-        {/* Toggle to Sign Up */}
         <Text style={styles.toggleText}>
           Not a member?{' '}
           <Text style={styles.toggleLink} onPress={onSwitch}>
@@ -210,9 +216,7 @@ const Login = ({ navigation, onSwitch }: any) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    // backgroundColor: 'red',
     alignItems: 'center',
-    height: '100%',
     justifyContent: 'center',
   },
   card: {
@@ -249,6 +253,11 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     fontSize: 14,
   },
+  eyeIcon: {
+    width: 20,
+    height: 20,
+    opacity: 0.6,
+  },
   button: {
     width: '100%',
     padding: 10,
@@ -270,6 +279,14 @@ const styles = StyleSheet.create({
     color: '#D32F2F',
     fontWeight: 'bold',
   },
+  eyeButton: {
+    position: 'absolute',
+    right: 20, // Adjust as needed for spacing
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  
 });
 
 export default Login;

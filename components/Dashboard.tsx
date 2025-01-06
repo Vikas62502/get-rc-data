@@ -44,31 +44,29 @@ const Dashboard: React.FC = () => {
     try {
       const { status: existingStatus } = await MediaLibrary.getPermissionsAsync();
       if (existingStatus !== 'granted') {
-        // Request permissions if not already granted
         const { status } = await MediaLibrary.requestPermissionsAsync();
         if (status !== 'granted') {
           Alert.alert('Permission denied', 'You need to enable permissions to save files.');
           return;
         }
       }
-      // Simulate API call to download RC
+  
       const response: any = await client.post(
         'api/dashboard/get-single-rc',
         { rcId: vehicleNumber },
-        { responseType: 'arraybuffer' } // Retrieve data as binary
+        { responseType: 'arraybuffer' }
       );
-
+  
       if (response.status === 200) {
         const base64Image = `data:image/png;base64,${Buffer.from(response.data, 'binary').toString('base64')}`;
         const fileUri = `${FileSystem.documentDirectory}${vehicleNumber}_RC.png`;
-
-        // Simulate saving file locally (without Media Library logic)
+  
         await FileSystem.writeAsStringAsync(fileUri, base64Image.replace(/^data:image\/png;base64,/, ''), {
           encoding: FileSystem.EncodingType.Base64,
         });
-
-        // Show the success modal
-        setSuccessModalVisible(true);
+  
+        setVehicleNumber('');  // Clear input only on success
+        setSuccessModalVisible(true);  // Show success modal
       } else {
         Alert.alert('Error', 'Failed to download RC image.');
       }
@@ -79,6 +77,7 @@ const Dashboard: React.FC = () => {
       setLoading(false);
     }
   };
+  
 
   useEffect(() => {
     fetchDashboardData();
@@ -140,7 +139,7 @@ const Dashboard: React.FC = () => {
             style={styles.input}
             placeholder="Enter Vehicle Number"
             value={vehicleNumber}
-            onChangeText={(text) => setVehicleNumber(text.toUpperCase())}
+            onChangeText={(text) => setVehicleNumber(text)}
           />
           <TouchableOpacity style={styles.button} onPress={() => handleDownloadRC(vehicleNumber)}>
             <Text style={styles.buttonText}>Get RC</Text>

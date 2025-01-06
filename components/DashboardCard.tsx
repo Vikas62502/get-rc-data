@@ -10,8 +10,10 @@ const DashboardCard = ({ vehicle, date, time, amount }: any) => {
         <Image source={require('../assets/car.png')} style={styles.vehicleImage} />
         <Text style={styles.cardText}>{vehicle}</Text>
       </View>
+      <View style={{ alignItems: 'center' }}>
       <Text style={styles.cardText}>{date}</Text>
       <Text style={styles.cardText}>{time}</Text>
+      </View>
       <Text style={styles.cardText}>{amount}</Text>
     </View>
   );

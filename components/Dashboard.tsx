@@ -8,7 +8,9 @@ import {
   FlatList,
   StyleSheet,
   ActivityIndicator,
-  BackHandler
+  Modal,
+  Image,
+  BackHandler,
 } from 'react-native';
 import DashboardCard from './DashboardCard';
 import { client } from './client/axios';
@@ -17,16 +19,12 @@ import * as MediaLibrary from 'expo-media-library';
 import Header from './Header';
 import { Buffer } from 'buffer';
 
-
-type DashboardProps = {
-  navigation: any;
-};
-
-const Dashboard: React.FC<DashboardProps> = ({ navigation }) => {
+const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [vehicleNumber, setVehicleNumber] = useState('');
   const [userData, setUserData] = useState<any>(null);
   const [transactions, setTransactions] = useState<any[]>([]);
+  const [successModalVisible, setSuccessModalVisible] = useState(false); // State for modal visibility
 
   const fetchDashboardData = async () => {
     setLoading(true);
@@ -44,35 +42,33 @@ const Dashboard: React.FC<DashboardProps> = ({ navigation }) => {
   const handleDownloadRC = async (vehicleNumber: string) => {
     setLoading(true);
     try {
-      // Request media library permissions
-      const { status } = await MediaLibrary.requestPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission denied', 'You need to enable permissions to save files.');
-        return;
+      const { status: existingStatus } = await MediaLibrary.getPermissionsAsync();
+      if (existingStatus !== 'granted') {
+        // Request permissions if not already granted
+        const { status } = await MediaLibrary.requestPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert('Permission denied', 'You need to enable permissions to save files.');
+          return;
+        }
       }
-
-      // Make the API request
+      // Simulate API call to download RC
       const response: any = await client.post(
-        'api/dashboard/get-single-rc', // Replace with your API URL
+        'api/dashboard/get-single-rc',
         { rcId: vehicleNumber },
         { responseType: 'arraybuffer' } // Retrieve data as binary
       );
 
       if (response.status === 200) {
         const base64Image = `data:image/png;base64,${Buffer.from(response.data, 'binary').toString('base64')}`;
-
         const fileUri = `${FileSystem.documentDirectory}${vehicleNumber}_RC.png`;
 
-        // Write the Base64 image to local filesystem
+        // Simulate saving file locally (without Media Library logic)
         await FileSystem.writeAsStringAsync(fileUri, base64Image.replace(/^data:image\/png;base64,/, ''), {
           encoding: FileSystem.EncodingType.Base64,
         });
 
-        // Save to media library
-        const asset = await MediaLibrary.createAssetAsync(fileUri);
-        await MediaLibrary.createAlbumAsync('RC Downloads', asset, false);
-
-        Alert.alert('Success', 'Image saved to your device!');
+        // Show the success modal
+        setSuccessModalVisible(true);
       } else {
         Alert.alert('Error', 'Failed to download RC image.');
       }
@@ -160,6 +156,32 @@ const Dashboard: React.FC<DashboardProps> = ({ navigation }) => {
           />
         </View>
       </View>
+
+      {/* Success Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={successModalVisible}
+        onRequestClose={() => setSuccessModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <View style={{ alignItems: 'center',marginTop: 50 }}>
+            <Image
+              source={require('../assets/success.png')} // Path to your tick image
+              style={styles.successImage}
+            />
+            <Text style={styles.successText}>RC Downloaded Successfully!</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.okButton}
+              onPress={() => setSuccessModalVisible(false)}
+            >
+              <Text style={styles.okButtonText}>OK</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -220,6 +242,32 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 10,
   },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    width: '70%',
+    height:'35%',
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  successImage: { width: 100, height: 100, marginBottom: 16 },
+  successText: { fontSize: 18, fontWeight: 'bold', textAlign: 'center', marginBottom: 16 },
+  okButton: {
+    backgroundColor: '#007bff',
+    paddingVertical: 10,
+    paddingHorizontal: 40,
+    borderRadius: 5,
+    marginTop: 50,
+  },
+  okButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+
 });
 
 export default Dashboard;

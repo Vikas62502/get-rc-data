@@ -1,14 +1,16 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { createStackNavigator } from '@react-navigation/stack';
 import AuthScreen from '../../components/AuthScreen'; // Adjust the path
 import Dashboard from '../../components/Dashboard'; // Adjust the path
 import Header from '@/components/Header'; // Adjust the path
 import Login from '@/components/Login';
+import { useNavigation } from '@react-navigation/native';
 
 const Stack = createStackNavigator();
 
 const Layout = () => {
+   
   return (
     <View style={styles.container}>
       {/* Header will be visible on every screen */}

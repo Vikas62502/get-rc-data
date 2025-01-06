@@ -67,14 +67,29 @@
 
 // export default Header;
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { client } from './client/axios';
 import { useNavigation } from '@react-navigation/native';
+import { clearAllCache, getCache } from './client/storage';
 
 
 const Header = ({ currentScreen }:any) => {
   const navigation = useNavigation();
+  // const [isAuthenticated, setIsAuthenticated] = useState(true);
+ const navigateToDashboard = async() => {
+   // Navigate to Dashboard screen
+   const token = await getCache('token');
+   if (token) {
+   navigation.navigate('Dashboard');
+   }
+ }
+ useEffect(() => {
+   navigateToDashboard();
+ }, []);
+
+
+
   const handleLogout = async () => {
     try {
       // Show confirmation alert
@@ -89,7 +104,10 @@ const Header = ({ currentScreen }:any) => {
           {
             text: 'OK',
             onPress: async () => {
+
               try {
+  await clearAllCache();
+
                 const response = await client.post('api/login/user-logout', {
                   method: 'POST',
                   headers: {
@@ -97,7 +115,6 @@ const Header = ({ currentScreen }:any) => {
                   },
                   credentials: 'include',
                 });
-  
                 Alert.alert('Logout Successful', 'You have been logged out.');
                 console.log(response, 'response');
   

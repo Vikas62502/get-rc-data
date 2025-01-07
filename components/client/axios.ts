@@ -10,15 +10,8 @@ export const client = axios.create({
   baseURL: `${customBaseUrl}`,
   headers: {
     'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': '*',
   },
 });
 
 setupInterceptorsTo(client)
-
-// export const authClient = axios.create({
-//   baseURL: `${customBaseUrl}:3001/v1/api`,
-//   timeout: 20000,
-//   headers: {
-//     'Content-Type': 'application/json'
-//   }
-// })

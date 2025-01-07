@@ -64,9 +64,13 @@ const Dashboard: React.FC = () => {
         await FileSystem.writeAsStringAsync(fileUri, base64Image.replace(/^data:image\/png;base64,/, ''), {
           encoding: FileSystem.EncodingType.Base64,
         });
+        // saving data to gallery
+        await MediaLibrary.createAssetAsync(fileUri);
 
-        setVehicleNumber('');  // Clear input only on success
-        setSuccessModalVisible(true);  // Show success modal
+        setVehicleNumber('');
+        setSuccessModalVisible(true);
+
+        console.log('RC downloaded successfully');
       } else {
         Alert.alert('Error', 'Failed to download RC image.');
       }

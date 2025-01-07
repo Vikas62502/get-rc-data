@@ -5,7 +5,6 @@ import AuthScreen from '../../components/AuthScreen'; // Adjust the path
 import Dashboard from '../../components/Dashboard'; // Adjust the path
 import Header from '@/components/Header'; // Adjust the path
 import Login from '@/components/Login';
-import { useNavigation } from '@react-navigation/native';
 
 const Stack = createStackNavigator();
 

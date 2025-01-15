@@ -11,6 +11,7 @@ import {
   Modal,
   Image,
   BackHandler,
+  RefreshControl,
 } from 'react-native';
 import DashboardCard from './DashboardCard';
 import { client } from './client/axios';
@@ -25,6 +26,12 @@ const Dashboard: React.FC = () => {
   const [userData, setUserData] = useState<any>(null);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [successModalVisible, setSuccessModalVisible] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchDashboardData();
+    setRefreshing(false);
+  };
 
   const fetchDashboardData = async () => {
     setLoading(true);
@@ -156,6 +163,7 @@ const Dashboard: React.FC = () => {
             renderItem={renderTransaction}
             keyExtractor={(item) => item.id}
             key={transactions.length}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           />
         </View>
       </View>

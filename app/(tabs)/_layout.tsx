@@ -5,11 +5,12 @@ import AuthScreen from '../../components/AuthScreen'; // Adjust the path
 import Dashboard from '../../components/Dashboard'; // Adjust the path
 import Header from '@/components/Header'; // Adjust the path
 import Login from '@/components/Login';
+import ForgetPass from '@/components/ForgetPass';
 
 const Stack = createStackNavigator();
 
 const Layout = () => {
-   
+
   return (
     <View style={styles.container}>
       {/* Header will be visible on every screen */}
@@ -18,6 +19,7 @@ const Layout = () => {
         <Stack.Screen name="Login" component={Login} />
         <Stack.Screen name="Auth" component={AuthScreen} />
         <Stack.Screen name="Dashboard" component={Dashboard} />
+        <Stack.Screen name="Forgetpassword" component={ForgetPass} />
       </Stack.Navigator>
     </View>
   );

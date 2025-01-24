@@ -32,7 +32,7 @@ const onResponseError = async (error: AxiosError): Promise<any> => {
   console.error(`[response error] [${JSON.stringify(error)}]`);
 
   // Check if error is due to token expiration and retry count is less than 3
-  if (error.response?.status === 403 && retryCount < 3) {
+  if (error.response?.status === 403 || error.response?.status === 401 && retryCount < 3) {
     const originalRequest: any = error.config;
     console.log('originalRequest', originalRequest);
 
@@ -44,7 +44,7 @@ const onResponseError = async (error: AxiosError): Promise<any> => {
         refreshToken: refreshToken,
       });
 
-      const newAccessToken = refreshResponse.data.token; // Extract the new token
+      const newAccessToken = refreshResponse.data.token;
 
       if (newAccessToken) {
         // Save the new token

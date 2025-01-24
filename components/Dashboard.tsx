@@ -48,6 +48,7 @@ const Dashboard: React.FC = () => {
 
   const handleDownloadRC = async (vehicleNumber: string) => {
     setLoading(true);
+    console.log("<---- api called")
     try {
       const { status: existingStatus } = await MediaLibrary.getPermissionsAsync();
       if (existingStatus !== 'granted') {
@@ -64,6 +65,8 @@ const Dashboard: React.FC = () => {
         { responseType: 'arraybuffer' }
       );
 
+      console.log(response, "<-- response")
+
       if (response.status === 200) {
         const base64Image = `data:image/png;base64,${Buffer.from(response.data, 'binary').toString('base64')}`;
         const fileUri = `${FileSystem.documentDirectory}${vehicleNumber}_RC.png`;
@@ -76,19 +79,40 @@ const Dashboard: React.FC = () => {
 
         setVehicleNumber('');
         setSuccessModalVisible(true);
-
+        await fetchDashboardData()
         console.log('RC downloaded successfully');
       } else {
         Alert.alert('Error', 'Failed to download RC image.');
       }
-    } catch (error) {
-      console.error('Error downloading RC:', error);
-      Alert.alert('Error', 'An unexpected error occurred.');
+    } catch (error: any) {
+      console.log('Full Error Object:', JSON.stringify(error, null, 2));
+      if (error.response) {
+        console.log('Error Response:', JSON.stringify(error.response, null, 2));
+
+        if (error.response.data instanceof ArrayBuffer) {
+          const decodedData = new TextDecoder().decode(error.response.data);
+          const parsedData = JSON.parse(decodedData);
+          Alert.alert('Error', parsedData.message || 'Unknown error occurred.');
+        } else {
+          Alert.alert(
+            'Server Error',
+            `Status: ${error.response.status}, Message: ${error.response.data?.message || 'Unknown error'}`
+          );
+        }
+      } else if (error.request) {
+        Alert.alert('Network Error', 'Please check your internet connection and try again.');
+      } else {
+        Alert.alert('Error', error.message || 'An unexpected error occurred.');
+      }
     } finally {
       setLoading(false);
     }
   };
 
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [successModalVisible]);
 
   useEffect(() => {
     fetchDashboardData();

@@ -9,6 +9,7 @@ import {
     Image,
 } from 'react-native';
 import { client } from './client/axios'; // Axios instance
+import Header from './Header';
 
 const ForgetPass = ({ navigation }: any) => {
     const [identifier, setIdentifier] = useState(''); // Email or phone
@@ -66,6 +67,8 @@ const ForgetPass = ({ navigation }: any) => {
 
     return (
         <View style={styles.container}>
+      <Header currentScreen={'Forgetpassword'} />
+
             <View style={styles.card}>
                 <Text style={styles.title}>
                     {step === 1 ? 'Forgot Password' : 'Reset Password'}
@@ -145,6 +148,7 @@ const ForgetPass = ({ navigation }: any) => {
                     </>
                 )}
             </View>
+            <View></View>
         </View>
     );
 };
@@ -153,8 +157,8 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#F5F5F5',
+        justifyContent: 'space-between',
+        backgroundColor: '#B2EBF2',
     },
     card: {
         width: '90%',
@@ -212,8 +216,8 @@ const styles = StyleSheet.create({
     },
     buttonText: {
         color: '#FFF',
-        fontSize: 16,
-        fontWeight: 'bold',
+    fontSize: 24,
+    fontWeight: 'bold',
     },
 });
 

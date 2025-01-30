@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Alert,
+  Platform,
   View,
   Text,
   TextInput,
@@ -19,6 +20,7 @@ import * as FileSystem from 'expo-file-system';
 import * as MediaLibrary from 'expo-media-library';
 import Header from './Header';
 import { Buffer } from 'buffer';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(false);
@@ -26,7 +28,9 @@ const Dashboard: React.FC = () => {
   const [userData, setUserData] = useState<any>(null);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [successModalVisible, setSuccessModalVisible] = useState(false);
+  const [rcModalVisible, setRCModalVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+
   const onRefresh = async () => {
     setRefreshing(true);
     await fetchDashboardData();
@@ -46,69 +50,99 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const handleDownloadRC = async (vehicleNumber: string) => {
-    setLoading(true);
-    console.log("<---- api called")
-    try {
-      const { status: existingStatus } = await MediaLibrary.getPermissionsAsync();
-      if (existingStatus !== 'granted') {
-        const { status } = await MediaLibrary.requestPermissionsAsync();
-        if (status !== 'granted') {
-          Alert.alert('Permission denied', 'You need to enable permissions to save files.');
-          return;
-        }
-      }
-
-      const response: any = await client.post(
-        'api/dashboard/get-single-rc',
-        { rcId: vehicleNumber },
-        { responseType: 'arraybuffer' }
-      );
-
-      console.log(response, "<-- response")
-
-      if (response.status === 200) {
-        const base64Image = `data:image/png;base64,${Buffer.from(response.data, 'binary').toString('base64')}`;
-        const fileUri = `${FileSystem.documentDirectory}${vehicleNumber}_RC.png`;
-
-        await FileSystem.writeAsStringAsync(fileUri, base64Image.replace(/^data:image\/png;base64,/, ''), {
-          encoding: FileSystem.EncodingType.Base64,
-        });
-        // saving data to gallery
-        await MediaLibrary.createAssetAsync(fileUri);
-
-        setVehicleNumber('');
-        setSuccessModalVisible(true);
-        await fetchDashboardData()
-        console.log('RC downloaded successfully');
-      } else {
-        Alert.alert('Error', 'Failed to download RC image.');
-      }
-    } catch (error: any) {
-      console.log('Full Error Object:', JSON.stringify(error, null, 2));
-      if (error.response) {
-        console.log('Error Response:', JSON.stringify(error.response, null, 2));
-
-        if (error.response.data instanceof ArrayBuffer) {
-          const decodedData = new TextDecoder().decode(error.response.data);
-          const parsedData = JSON.parse(decodedData);
-          Alert.alert('Error', parsedData.message || 'Unknown error occurred.');
-        } else {
-          Alert.alert(
-            'Server Error',
-            `Status: ${error.response.status}, Message: ${error.response.data?.message || 'Unknown error'}`
-          );
-        }
-      } else if (error.request) {
-        Alert.alert('Network Error', 'Please check your internet connection and try again.');
-      } else {
-        Alert.alert('Error', error.message || 'An unexpected error occurred.');
-      }
-    } finally {
-      setLoading(false);
+  // Separate function for downloading Basic RC (PNG)
+  const downloadBasicRC = async () => {
+    if (!vehicleNumber.trim()) {
+      Alert.alert('Error', 'Please enter a vehicle number.');
+      return;
     }
+    await handleDownloadRC('/api/dashboard/get-single-rc', 'png');
   };
 
+  // Separate function for downloading Digital RC (PDF)
+  const downloadDigitalRC = async () => {
+    if (!vehicleNumber.trim()) {
+      Alert.alert('Error', 'Please enter a vehicle number.');
+      return;
+    }
+    await handleDownloadRC('/api/dashboard/get-digital-rc', 'pdf');
+  };
+
+  // Common download handler
+  const handleDownloadRC = async (url: string, fileType: 'png' | 'pdf') => {
+    setLoading(true);
+    try {
+        const response: any = await client.post(url, { rcId: vehicleNumber }, { responseType: 'arraybuffer' });
+
+        if (response.status !== 200) {
+            Alert.alert('Error', 'Failed to download RC.');
+            return;
+        }
+
+        const fileExtension = fileType === 'png' ? 'png' : 'pdf';
+        const fileName = `${vehicleNumber}_RC.${fileExtension}`;
+        const fileData = Buffer.from(response.data, 'binary').toString('base64');
+
+        if (Platform.OS === 'android') {
+            let directoryUri = await AsyncStorage.getItem('download_directory_uri');
+
+            // If no stored directory, request permission
+            if (!directoryUri) {
+                const permissions = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
+                if (!permissions.granted) {
+                    Alert.alert('Permission Denied', 'You need to grant access to a writable folder.');
+                    return;
+                }
+
+                directoryUri = permissions.directoryUri;
+                await AsyncStorage.setItem('download_directory_uri', directoryUri);
+            }
+
+            try {
+                // Try to create file in the selected folder
+                const downloadUri = await FileSystem.StorageAccessFramework.createFileAsync(
+                    directoryUri,
+                    fileName,
+                    fileType === 'png' ? 'image/png' : 'application/pdf'
+                );
+
+                await FileSystem.writeAsStringAsync(downloadUri, fileData, {
+                    encoding: FileSystem.EncodingType.Base64,
+                });
+
+                // Alert.alert('Success', `File saved in ${directoryUri}`);
+            } catch (error) {
+                console.error("Error writing to SAF folder, using fallback:", error);
+
+                // Fallback to app cache directory
+                const fallbackPath = `${FileSystem.cacheDirectory}${fileName}`;
+                await FileSystem.writeAsStringAsync(fallbackPath, fileData, {
+                    encoding: FileSystem.EncodingType.Base64,
+                });
+
+                Alert.alert('Saved in Cache', 'Could not save to RC Folder. The file has been saved to app storage.');
+            }
+        } else {
+            // iOS: Save to MediaLibrary
+            const fileUri = `${FileSystem.documentDirectory}${fileName}`;
+            await FileSystem.writeAsStringAsync(fileUri, fileData, {
+                encoding: FileSystem.EncodingType.Base64,
+            });
+
+            const asset = await MediaLibrary.createAssetAsync(fileUri);
+            await MediaLibrary.createAlbumAsync('Download', asset, false);
+        }
+
+        setSuccessModalVisible(true);
+        setRCModalVisible(false);
+        setVehicleNumber('');
+    } catch (error: any) {
+        console.error('Error during file download:', error.message);
+        Alert.alert('Error', 'An unexpected error occurred.');
+    } finally {
+        setLoading(false);
+    }
+};
 
   useEffect(() => {
     fetchDashboardData();
@@ -134,18 +168,17 @@ const Dashboard: React.FC = () => {
 
     const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
 
-    // Cleanup the event listener on component unmount
     return () => backHandler.remove();
   }, []);
 
   const formatDate = (dateTimeString: any) => {
     const date = new Date(dateTimeString);
-    return date.toLocaleDateString(); // e.g., "12/28/2024"
+    return date.toLocaleDateString();
   };
 
   const formatTime = (dateTimeString: any) => {
     const date = new Date(dateTimeString);
-    return date.toLocaleTimeString(); // e.g., "4:19:12 PM"
+    return date.toLocaleTimeString();
   };
 
   const renderTransaction = ({ item }: any) => (
@@ -176,7 +209,7 @@ const Dashboard: React.FC = () => {
             value={vehicleNumber}
             onChangeText={(text) => setVehicleNumber(text)}
           />
-          <TouchableOpacity style={styles.button} onPress={() => handleDownloadRC(vehicleNumber)}>
+          <TouchableOpacity style={styles.button} onPress={() => setRCModalVisible(true)}>
             <Text style={styles.buttonText}>Get RC</Text>
           </TouchableOpacity>
         </View>
@@ -192,6 +225,38 @@ const Dashboard: React.FC = () => {
         </View>
       </View>
 
+      {/* RC Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={rcModalVisible}
+        onRequestClose={() => setRCModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setRCModalVisible(false)}
+            >
+              <Text style={styles.closeButtonText}>×</Text>
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Download RC of : {vehicleNumber}</Text>
+            <TouchableOpacity
+              style={styles.rcButtonbasic}
+              onPress={downloadBasicRC}
+            >
+              <Text style={styles.buttonText}>Download Basic RC</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.rcButtondigital}
+              onPress={downloadDigitalRC}
+            >
+              <Text style={styles.buttonText}>Download Digital RC</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
       {/* Success Modal */}
       <Modal
         animationType="slide"
@@ -200,14 +265,12 @@ const Dashboard: React.FC = () => {
         onRequestClose={() => setSuccessModalVisible(false)}
       >
         <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <View style={{ alignItems: 'center', marginTop: 50 }}>
-              <Image
-                source={require('../assets/success.png')} // Path to your tick image
-                style={styles.successImage}
-              />
-              <Text style={styles.successText}>RC Downloaded Successfully!</Text>
-            </View>
+          <View style={styles.modalContentSuccess}>
+            <Image
+              source={require('../assets/success.png')}
+              style={styles.successImage}
+            />
+            <Text style={styles.successText}>RC Downloaded Successfully!</Text>
             <TouchableOpacity
               style={styles.okButton}
               onPress={() => setSuccessModalVisible(false)}
@@ -277,13 +340,68 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 10,
   },
-  modalContainer: {
+  modalOverlay: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
+    width: '80%',
+    backgroundColor: '#FFF',
+    borderRadius: 10,
+    padding: 20,
+    alignItems: 'center',
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 0,
+    right: 10,
+  },
+  closeButtonText: {
+    fontSize: 35,
+    color: '#000000',
+  },
+  modalTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 20,
+  },
+  modalButton: {
+    backgroundColor: '#007BFF',
+    padding: 15,
+    borderRadius: 5,
+    marginVertical: 10,
+    width: '100%',
+    alignItems: 'center',
+  },
+  modalButtonText: {
+    color: '#FFF',
+    fontWeight: 'bold',
+  },
+  rcButtondigital: {
+    backgroundColor: '#007BFF',
+    padding: 15,
+    borderRadius: 5,
+    marginVertical: 5,
+    width: '100%',
+    alignItems: 'center',
+  },
+  rcButtonbasic: {
+    backgroundColor: '#007BFF',
+    padding: 15,
+    borderRadius: 5,
+    marginVertical: 5,
+    width: '100%',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContentSuccess: {
     width: '70%',
     height: '35%',
     backgroundColor: '#fff',

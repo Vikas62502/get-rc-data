@@ -136,7 +136,7 @@ const Header = ({ currentScreen }: any) => {
     <View style={styles.header}>
       <Text style={styles.headerText}>GetRC</Text>
       {/* Conditionally render the logout button */}
-      {currentScreen !== 'Login' && currentScreen !== 'Signup' && (
+      {currentScreen !== 'Login' && currentScreen !== 'Signup' && currentScreen!== 'Forgetpassword'&& (
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Text style={styles.logoutButtonText}>Logout</Text>
         </TouchableOpacity>

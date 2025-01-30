@@ -13,6 +13,7 @@ import {
   Image,
   BackHandler,
   RefreshControl,
+  Linking,
 } from 'react-native';
 import DashboardCard from './DashboardCard';
 import { client } from './client/axios';
@@ -21,6 +22,7 @@ import * as MediaLibrary from 'expo-media-library';
 import Header from './Header';
 import { Buffer } from 'buffer';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Fontisto from '@expo/vector-icons/Fontisto';
 
 const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(false);
@@ -72,77 +74,77 @@ const Dashboard: React.FC = () => {
   const handleDownloadRC = async (url: string, fileType: 'png' | 'pdf') => {
     setLoading(true);
     try {
-        const response: any = await client.post(url, { rcId: vehicleNumber }, { responseType: 'arraybuffer' });
+      const response: any = await client.post(url, { rcId: vehicleNumber }, { responseType: 'arraybuffer' });
 
-        if (response.status !== 200) {
-            Alert.alert('Error', 'Failed to download RC.');
+      if (response.status !== 200) {
+        Alert.alert('Error', 'Failed to download RC.');
+        return;
+      }
+
+      const fileExtension = fileType === 'png' ? 'png' : 'pdf';
+      const fileName = `${vehicleNumber}_RC.${fileExtension}`;
+      const fileData = Buffer.from(response.data, 'binary').toString('base64');
+
+      if (Platform.OS === 'android') {
+        let directoryUri = await AsyncStorage.getItem('download_directory_uri');
+
+        // If no stored directory, request permission
+        if (!directoryUri) {
+          const permissions = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
+          if (!permissions.granted) {
+            Alert.alert('Permission Denied', 'You need to grant access to a writable folder.');
             return;
+          }
+
+          directoryUri = permissions.directoryUri;
+          await AsyncStorage.setItem('download_directory_uri', directoryUri);
         }
 
-        const fileExtension = fileType === 'png' ? 'png' : 'pdf';
-        const fileName = `${vehicleNumber}_RC.${fileExtension}`;
-        const fileData = Buffer.from(response.data, 'binary').toString('base64');
+        try {
+          // Try to create file in the selected folder
+          const downloadUri = await FileSystem.StorageAccessFramework.createFileAsync(
+            directoryUri,
+            fileName,
+            fileType === 'png' ? 'image/png' : 'application/pdf'
+          );
 
-        if (Platform.OS === 'android') {
-            let directoryUri = await AsyncStorage.getItem('download_directory_uri');
+          await FileSystem.writeAsStringAsync(downloadUri, fileData, {
+            encoding: FileSystem.EncodingType.Base64,
+          });
 
-            // If no stored directory, request permission
-            if (!directoryUri) {
-                const permissions = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
-                if (!permissions.granted) {
-                    Alert.alert('Permission Denied', 'You need to grant access to a writable folder.');
-                    return;
-                }
+          // Alert.alert('Success', `File saved in ${directoryUri}`);
+        } catch (error) {
+          console.error("Error writing to SAF folder, using fallback:", error);
 
-                directoryUri = permissions.directoryUri;
-                await AsyncStorage.setItem('download_directory_uri', directoryUri);
-            }
+          // Fallback to app cache directory
+          const fallbackPath = `${FileSystem.cacheDirectory}${fileName}`;
+          await FileSystem.writeAsStringAsync(fallbackPath, fileData, {
+            encoding: FileSystem.EncodingType.Base64,
+          });
 
-            try {
-                // Try to create file in the selected folder
-                const downloadUri = await FileSystem.StorageAccessFramework.createFileAsync(
-                    directoryUri,
-                    fileName,
-                    fileType === 'png' ? 'image/png' : 'application/pdf'
-                );
-
-                await FileSystem.writeAsStringAsync(downloadUri, fileData, {
-                    encoding: FileSystem.EncodingType.Base64,
-                });
-
-                // Alert.alert('Success', `File saved in ${directoryUri}`);
-            } catch (error) {
-                console.error("Error writing to SAF folder, using fallback:", error);
-
-                // Fallback to app cache directory
-                const fallbackPath = `${FileSystem.cacheDirectory}${fileName}`;
-                await FileSystem.writeAsStringAsync(fallbackPath, fileData, {
-                    encoding: FileSystem.EncodingType.Base64,
-                });
-
-                Alert.alert('Saved in Cache', 'Could not save to RC Folder. The file has been saved to app storage.');
-            }
-        } else {
-            // iOS: Save to MediaLibrary
-            const fileUri = `${FileSystem.documentDirectory}${fileName}`;
-            await FileSystem.writeAsStringAsync(fileUri, fileData, {
-                encoding: FileSystem.EncodingType.Base64,
-            });
-
-            const asset = await MediaLibrary.createAssetAsync(fileUri);
-            await MediaLibrary.createAlbumAsync('Download', asset, false);
+          Alert.alert('Saved in Cache', 'Could not save to RC Folder. The file has been saved to app storage.');
         }
+      } else {
+        // iOS: Save to MediaLibrary
+        const fileUri = `${FileSystem.documentDirectory}${fileName}`;
+        await FileSystem.writeAsStringAsync(fileUri, fileData, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
 
-        setSuccessModalVisible(true);
-        setRCModalVisible(false);
-        setVehicleNumber('');
+        const asset = await MediaLibrary.createAssetAsync(fileUri);
+        await MediaLibrary.createAlbumAsync('Download', asset, false);
+      }
+
+      setSuccessModalVisible(true);
+      setRCModalVisible(false);
+      setVehicleNumber('');
     } catch (error: any) {
-        console.error('Error during file download:', error.message);
-        Alert.alert('Error', 'An unexpected error occurred.');
+      console.error('Error during file download:', error.message);
+      Alert.alert('Error', 'An unexpected error occurred.');
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
-};
+  };
 
   useEffect(() => {
     fetchDashboardData();
@@ -223,6 +225,27 @@ const Dashboard: React.FC = () => {
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           />
         </View>
+        {/* Redirect to whatsapp for top up with svg logo*/}
+        <View style={{ position: 'absolute', right: 20, bottom: 20, zIndex: 20 }}>
+          <TouchableOpacity
+            style={{
+              backgroundColor: "green",
+              width: 60,  
+              height: 60,
+              borderRadius: 30, 
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+            onPress={() =>
+              Linking.openURL(
+                'https://api.whatsapp.com/send?phone=9057268352&text=Hello,%20Please%20add%20funds%20in%20my%20Wallet%20for%20RC'
+              )
+            }
+          >
+            <Fontisto name="whatsapp" size={30} color="white" />
+          </TouchableOpacity>
+        </View>
+
       </View>
 
       {/* RC Modal */}

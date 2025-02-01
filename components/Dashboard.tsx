@@ -87,9 +87,26 @@ const Dashboard: React.FC = () => {
         Alert.alert('Error', 'Failed to download RC image.');
       }
       setRCModalVisible(false);
-    } catch (error) {
-      console.error('Error downloading RC:', error);
-      Alert.alert('Error', 'An unexpected error occurred.');
+    } catch (error: any) {
+      console.log('Full Error Object:', JSON.stringify(error, null, 2));
+      if (error.response) {
+        console.log('Error Response:', JSON.stringify(error.response, null, 2));
+
+        if (error.response.data instanceof ArrayBuffer) {
+          const decodedData = new TextDecoder().decode(error.response.data);
+          const parsedData = JSON.parse(decodedData);
+          Alert.alert('Error', parsedData.message || 'Unknown error occurred.');
+        } else {
+          Alert.alert(
+            'Server Error',
+            `Status: ${error.response.status}, Message: ${error.response.data?.message || 'Unknown error'}`
+          );
+        }
+      } else if (error.request) {
+        Alert.alert('Network Error', 'Please check your internet connection and try again.');
+      } else {
+        Alert.alert('Error', error.message || 'An unexpected error occurred.');
+      }
       setRCModalVisible(false);
     } finally {
       setLoading(false);

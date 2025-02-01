@@ -28,7 +28,7 @@
     "axios": "^1.7.9",
     "buffer": "^6.0.3",
     "expo": "^52.0.25",
-    "expo-blur": "~14.0.2",
+    "expo-blur": "~14.0.3",
     "expo-constants": "~17.0.4",
     "expo-file-system": "~18.0.7",
     "expo-font": "~13.0.3",

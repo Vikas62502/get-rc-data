@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image } from 'react-native';
-import axios from 'axios';
 import { client } from './client/axios';
-import { getCache, setCache } from './client/storage';
+import { setCache } from './client/storage';
 
 const Login = ({ navigation, onSwitch }: any) => {
   const [identifier, setIdentifier] = useState(''); // Can be email or mobile
@@ -27,9 +26,9 @@ const Login = ({ navigation, onSwitch }: any) => {
       await setCache('token', response?.data?.token);
       await setCache('userData', response?.data?.user);
       await setCache('refreshtoken', response?.data?.refreshToken);
-    } catch (error) {
-      console.error('Login Error:', error);
-      Alert.alert('Error', 'Unable to log in. Please try again.');
+    } catch (error: any) {
+      console.error('Login Error:', error?.response?.data?.message);
+      Alert.alert('Error', error?.response?.data?.message || 'Unable to log in. Please try again.');
     } finally {
       setLoading(false);
     }

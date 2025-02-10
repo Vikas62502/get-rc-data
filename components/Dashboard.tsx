@@ -53,33 +53,47 @@ const Dashboard: React.FC = () => {
   const handleDownloadRC = async (vehicleNumber: string, rcType: string) => {
     setLoading(true);
     try {
-      const { status: existingStatus } = await MediaLibrary.getPermissionsAsync();
-      if (existingStatus !== 'granted') {
-        const { status } = await MediaLibrary.requestPermissionsAsync();
-        if (status !== 'granted') {
-          Alert.alert('Permission denied', 'You need to enable permissions to save files.');
-          return;
-        }
+      // Request Media Library Permissions
+      const { granted } = await MediaLibrary.requestPermissionsAsync();
+      if (!granted) {
+        Alert.alert('Permission denied', 'You need to enable permissions to save files.');
+        return;
       }
 
+      // API Endpoint
       const baseUrl = rcType === 'basic' ? 'api/dashboard/get-single-rc' : 'api/dashboard/get-digital-rc';
       const response: any = await client.post(
         baseUrl,
         { rcId: vehicleNumber },
         { responseType: 'arraybuffer' }
       );
-      console.log(response, "<--- response");
-      console.log(vehicleNumber, "<--- vehicleNumber");
 
       if (response.status === 200) {
-        const base64Image = `data:image/png;base64,${Buffer.from(response.data, 'binary').toString('base64')}`;
-        const fileUri = `${FileSystem.documentDirectory}_Rc.png`;
+        const base64Data = Buffer.from(response.data, 'binary').toString('base64');
+        const fileUri = `${FileSystem.cacheDirectory}RC_${Date.now()}.png`;
 
-        await FileSystem.writeAsStringAsync(fileUri, base64Image.replace(/^data:image\/png;base64,/, ''), {
+        // Check if file exists, if not, create an empty file
+        const fileInfo = await FileSystem.getInfoAsync(fileUri);
+        if (!fileInfo.exists) {
+          console.log("File does not exist, creating a new one...");
+          await FileSystem.writeAsStringAsync(fileUri, '', {
+            encoding: FileSystem.EncodingType.UTF8,
+          });
+        }
+
+        // Write Base64 Image Data
+        await FileSystem.writeAsStringAsync(fileUri, base64Data, {
           encoding: FileSystem.EncodingType.Base64,
         });
-        // saving data to gallery
-        await MediaLibrary.createAssetAsync(fileUri);
+
+        // Verify that the file now exists before proceeding
+        const newFileInfo = await FileSystem.getInfoAsync(fileUri);
+        if (!newFileInfo.exists) {
+          throw new Error("File creation failed! Something went wrong while writing the image.");
+        }
+
+        // Save to gallery
+        await MediaLibrary.saveToLibraryAsync(fileUri);
 
         setVehicleNumber('');
         setSuccessModalVisible(true);

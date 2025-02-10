@@ -104,16 +104,18 @@ const Header = ({ currentScreen }: any) => {
               try {
                 await clearAllCache();
 
-                const response = await client.post('api/login/user-logout', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                  credentials: 'include',
-                });
+                try {
+                  const response = await client.post('api/login/user-logout', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                  });
+                } catch (error) {
+                  console.log('error', error);
+                }
                 Alert.alert('Logout Successful', 'You have been logged out.');
-                console.log(response, 'response');
-
                 // Navigate to the login screen
                 navigation.navigate('Auth');
               } catch (error) {
@@ -136,7 +138,7 @@ const Header = ({ currentScreen }: any) => {
     <View style={styles.header}>
       <Text style={styles.headerText}>GetRC</Text>
       {/* Conditionally render the logout button */}
-      {currentScreen !== 'Login' && currentScreen !== 'Signup' && currentScreen!== 'Forgetpassword'&& (
+      {currentScreen !== 'Login' && currentScreen !== 'Signup' && currentScreen !== 'Forgetpassword' && (
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Text style={styles.logoutButtonText}>Logout</Text>
         </TouchableOpacity>

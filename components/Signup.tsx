@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image } from 'react-native';
 import { client } from './client/axios'; // Reuse axios client
 
-const Signup = ({ onSwitch, navigation }: any) => {
+const Signup = ({ navigation, onSwitch }: any) => {
   const [name, setName] = useState('');
   const [mobile, setMobile] = useState('');
   const [email, setEmail] = useState('');
@@ -33,9 +33,16 @@ const Signup = ({ onSwitch, navigation }: any) => {
         role: 'User',
       });
       Alert.alert('Success', 'Account created successfully. Please log in.');
-    } catch (error) {
-      console.error('Signup Error:', error);
-      Alert.alert('Error', 'Unable to sign up. Please try again later.');
+    } catch (error: any) {
+      console.error('Signup Error:', error.response?.data?.message);
+      // navigate to login screen on press ok
+      Alert.alert('Error', error.response?.data?.message || 'Unable to sign up. Please try again.', [
+        {
+          text: 'OK',
+          onPress: () => navigation.navigate('Auth'),
+        },
+      ]
+      );
     } finally {
       setLoading(false);
     }

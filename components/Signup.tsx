@@ -68,11 +68,12 @@ const Signup = ({ navigation, onSwitch }: any) => {
           <Image source={require('../assets/phone.png')} style={styles.inputIcon} />
           <TextInput
             style={styles.input}
-            placeholder="+91 Enter Mobile Number"
+            placeholder="Enter Mobile Number"
             placeholderTextColor="#888"
             keyboardType="phone-pad"
             value={mobile}
             onChangeText={setMobile}
+            maxLength={10}
           />
         </View>
 
